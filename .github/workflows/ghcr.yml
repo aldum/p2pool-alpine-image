@@ -1,0 +1,122 @@
+name: ghcr ci
+
+env:
+  IMAGE_NAME: "p2pool-alpine"
+
+on:
+  push:
+    tags:
+      - v*
+  workflow_dispatch:
+
+jobs:
+  build-image-x86:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Set Variables
+        run: |
+          IMAGE_ID=ghcr.io/${{ github.repository_owner }}/$IMAGE_NAME
+          IMAGE_ID=$(echo $IMAGE_ID | tr '[A-Z]' '[a-z]')
+          VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
+          [[ "${{ github.ref }}" == "refs/tags/"* ]] && VERSION=$(echo $VERSION | sed -e 's/^v//')
+          [ "$VERSION" == "master" ] && VERSION=latest
+          echo "IMAGE_ID=$IMAGE_ID" >> $GITHUB_ENV
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+        env:
+          IMAGE_ID: ${{ env.IMAGE_ID }}
+          VERSION: ${{ env.VERSION }}
+      - name: Build x64 image
+        run: docker buildx build . --platform linux/amd64 --tag $IMAGE_ID:amd64 --label "runnumber=${GITHUB_RUN_ID}" --cache-to type=gha,mode=max --cache-from type=gha -o type=docker,dest=x86_64.tar
+      - name: Load amd64 image
+        run: docker load --input x86_64.tar
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          path: x86_64.tar
+          name: x86_64.tar
+
+  build-image-arm:
+    runs-on: ubuntu-24.04-arm
+    permissions:
+      packages: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Set Variables
+        run: |
+          IMAGE_ID=ghcr.io/${{ github.repository_owner }}/$IMAGE_NAME
+          IMAGE_ID=$(echo $IMAGE_ID | tr '[A-Z]' '[a-z]')
+          VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
+          [[ "${{ github.ref }}" == "refs/tags/"* ]] && VERSION=$(echo $VERSION | sed -e 's/^v//')
+          [ "$VERSION" == "master" ] && VERSION=latest
+          echo "IMAGE_ID=$IMAGE_ID" >> $GITHUB_ENV
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+        env:
+          IMAGE_ID: ${{ env.IMAGE_ID }}
+          VERSION: ${{ env.VERSION }}
+      - name: Build arm64 image
+        run: docker buildx build . --platform linux/arm64 --tag $IMAGE_ID:arm64 --label "runnumber=${GITHUB_RUN_ID}" --cache-to type=gha,mode=max --cache-from type=gha -o type=docker,dest=arm64.tar
+      - name: Load arm64 image
+        run: docker load --input arm64.tar
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          path: arm64.tar
+          name: arm64.tar
+
+  push-image:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read
+    needs:
+      - build-image-x86
+      - build-image-arm
+    steps:
+      - uses: actions/checkout@v5
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Set Variables
+        run: |
+          IMAGE_ID=ghcr.io/${{ github.repository_owner }}/$IMAGE_NAME
+          IMAGE_ID=$(echo $IMAGE_ID | tr '[A-Z]' '[a-z]')
+          VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
+          [[ "${{ github.ref }}" == "refs/tags/"* ]] && VERSION=$(echo $VERSION | sed -e 's/^v//')
+          [ "$VERSION" == "master" ] && VERSION=latest
+          echo "IMAGE_ID=$IMAGE_ID" >> $GITHUB_ENV
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+      - name: Download arm64 artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: arm64.tar
+      - name: Download x64 artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: x86_64.tar
+      - name: Log in to registry
+        run: echo "${{ secrets.PAT_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+      - name: Load images
+        run: |
+          docker load -i arm64.tar
+          docker load -i x86_64.tar
+          docker image ls
+          docker push $IMAGE_ID:amd64
+          docker push $IMAGE_ID:arm64
+          docker manifest create $IMAGE_ID:latest \
+                          --amend $IMAGE_ID:amd64 \
+                          --amend $IMAGE_ID:arm64
+          docker manifest push $IMAGE_ID:latest
+      # - name: Push arm64 image
+      #   run: docker buildx build . --platform linux/arm64 --cache-from type=gha --tag $IMAGE_ID --push
+      #   continue-on-error: true
+      # - name: Push x64 image
+      #   run: docker buildx build . --platform linux/amd64 --cache-from type=gha --tag $IMAGE_ID --push
+      #   continue-on-error: true
