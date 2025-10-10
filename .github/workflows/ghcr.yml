@@ -37,7 +37,7 @@ jobs:
         with:
           context: .
           push: true
-          tags: ${{ github.repository_owner }}/p2pool-alpine:latest
+          tags: ghcr.io/${{ github.repository_owner }}/p2pool-alpine:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
       # - name: Build and push image
