@@ -27,6 +27,8 @@ RUN test -z "$NPROC" && nproc > /nproc || echo -n "$NPROC" > /nproc && \
 
 FROM alpine:latest
 
+LABEL org.opencontainers.image.source="https://github.com/aldum/p2pool-alpine-image"
+
 RUN apk add --no-cache \
   libuv-dev libzmq libsodium-dev libcurl
 
