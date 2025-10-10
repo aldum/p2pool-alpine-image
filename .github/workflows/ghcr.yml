@@ -33,7 +33,14 @@ jobs:
           VERSION: ${{ env.VERSION }}
       - name: Log in to registry
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-      - name: Build and push image
-        run: docker buildx build . --platform linux/amd64,linux/arm64 --tag $IMAGE_ID --label "runnumber=${GITHUB_RUN_ID}" --push
+      - uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ github.repository_owner }}/p2pool-alpine:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      # - name: Build and push image
+      #   run: docker buildx build . --platform linux/amd64,linux/arm64 --tag $IMAGE_ID --label "runnumber=${GITHUB_RUN_ID}" --push
       - name: Clean up Docker images
         run: docker image prune -f
