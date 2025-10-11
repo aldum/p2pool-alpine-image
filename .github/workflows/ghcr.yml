@@ -41,7 +41,7 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          pattern: "*.tar"
+          path: x86_64.tar
       - name: Push x86 image
         # run: docker buildx build . --platform linux/amd64,linux/arm64 --tag $IMAGE_ID --push
         run: docker buildx build . --platform linux/amd64 --tag $IMAGE_ID --push
