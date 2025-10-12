@@ -33,18 +33,15 @@ jobs:
           VERSION: ${{ env.VERSION }}
       - name: Log in to registry
         run: echo "${{ secrets.PAT_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-      - name: Build x86 image
-        # run: docker buildx build . --platform linux/amd64,linux/arm64 --tag $IMAGE_ID --label "runnumber=${GITHUB_RUN_ID}"
+      - name: Build x64 image
         run: docker buildx build . --platform linux/amd64 --tag $IMAGE_ID --label "runnumber=${GITHUB_RUN_ID}" -o type=docker,dest=x86_64.tar
-      # - name: Build arm64 image
-      #   run: docker buildx build . --platform linux/arm64 --tag $IMAGE_ID --label "runnumber=${GITHUB_RUN_ID}" -o type=docker,dest=arm64.tar
+      - name: Load amd64 image
+        run: docker load --input x86_64.tar
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           path: x86_64.tar
-      # - name: Push x86 image
-      #   # run: docker buildx build . --platform linux/amd64,linux/arm64 --tag $IMAGE_ID --push
-      #   run: docker buildx build . --platform linux/amd64 --tag $IMAGE_ID --push
+          name: x86_64.tar
 
   build-image-arm:
     runs-on: ubuntu-24.04-arm
@@ -71,7 +68,30 @@ jobs:
         run: echo "${{ secrets.PAT_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
       - name: Build arm64 image
         run: docker buildx build . --platform linux/arm64 --tag $IMAGE_ID --label "runnumber=${GITHUB_RUN_ID}" -o type=docker,dest=arm64.tar
+      - name: Load arm64 image
+        run: docker load --input arm64.tar
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           path: arm64.tar
+          name: arm64.tar
+
+  push-image:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read
+    steps:
+      # - name: Download arm64 artifact
+      #   uses: actions/download-artifact@v4
+      #   with:
+      #     path: arm64.tar
+      #     name: arm64.tar
+      # - name: Download x64 artifact
+      #   uses: actions/download-artifact@v4
+      #   with:
+      #     path: x86_64.tar
+      #     name: x86_64.tar
+      - name: Push x86 image
+        run: docker buildx build . --platform linux/amd64,linux/arm64 --tag $IMAGE_ID --push
+        continue-on-error: true
