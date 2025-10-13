@@ -97,16 +97,21 @@ jobs:
           [ "$VERSION" == "master" ] && VERSION=latest
           echo "IMAGE_ID=$IMAGE_ID" >> $GITHUB_ENV
           echo "VERSION=$VERSION" >> $GITHUB_ENV
-      # - name: Download arm64 artifact
-      #   uses: actions/download-artifact@v4
-      #   with:
-      #     path: arm64.tar
-      #     name: arm64.tar
-      # - name: Download x64 artifact
-      #   uses: actions/download-artifact@v4
-      #   with:
-      #     path: x86_64.tar
-      #     name: x86_64.tar
+      - name: Download arm64 artifact
+        uses: actions/download-artifact@v4
+        with:
+          path: arm64.tar
+          name: arm64.tar
+      - name: Download x64 artifact
+        uses: actions/download-artifact@v4
+        with:
+          path: x86_64.tar
+          name: x86_64.tar
+      - name: Load images
+        run: |
+          docker load -i arm64.tar
+          docker load -i x86_64.tar
+        continue-on-error: true
       - name: Push image
         run: docker buildx build . --platform linux/amd64,linux/arm64 --tag $IMAGE_ID --push
         continue-on-error: true
