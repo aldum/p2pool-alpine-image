@@ -100,12 +100,10 @@ jobs:
       - name: Download arm64 artifact
         uses: actions/download-artifact@v4
         with:
-          path: arm64.tar
           name: arm64.tar
       - name: Download x64 artifact
         uses: actions/download-artifact@v4
         with:
-          path: x86_64.tar
           name: x86_64.tar
       - name: Load images
         run: |
