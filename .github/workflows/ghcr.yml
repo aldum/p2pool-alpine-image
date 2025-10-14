@@ -101,9 +101,6 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: arm64.tar
-      - name: Push arm64 image
-        run: docker buildx build . --platform linux/arm64 --tag $IMAGE_ID --push
-        continue-on-error: true
       - name: Download x64 artifact
         uses: actions/download-artifact@v4
         with:
@@ -112,6 +109,10 @@ jobs:
         run: |
           docker load -i arm64.tar
           docker load -i x86_64.tar
-      - name: Push x64 image
-        run: docker buildx build . --platform linux/amd64 --tag $IMAGE_ID --push
-        continue-on-error: true
+          docker image ls
+      # - name: Push arm64 image
+      #   run: docker buildx build . --platform linux/arm64 --cache-from type=gha --tag $IMAGE_ID --push
+      #   continue-on-error: true
+      # - name: Push x64 image
+      #   run: docker buildx build . --platform linux/amd64 --cache-from type=gha --tag $IMAGE_ID --push
+      #   continue-on-error: true
