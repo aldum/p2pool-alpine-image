@@ -110,6 +110,12 @@ jobs:
           docker load -i arm64.tar
           docker load -i x86_64.tar
           docker image ls
+          docker push $IMAGE_ID:amd64
+          docker push $IMAGE_ID:arm64
+          docker manifest create $IMAGE_ID:latest \
+                          --amend $IMAGE_ID:amd64 \
+                          --amend $IMAGE_ID:arm64
+          docker manifest push $IMAGE_ID:latest
       # - name: Push arm64 image
       #   run: docker buildx build . --platform linux/arm64 --cache-from type=gha --tag $IMAGE_ID --push
       #   continue-on-error: true
