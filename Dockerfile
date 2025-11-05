@@ -1,4 +1,4 @@
-ARG P2POOL_BRANCH=v4.11
+ARG P2POOL_BRANCH=v4.12
 
 FROM alpine:latest as build
 
