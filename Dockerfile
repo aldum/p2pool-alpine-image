@@ -1,5 +1,9 @@
 ARG P2POOL_BRANCH=v4.12
 
+LABEL org.opencontainers.image.source=https://github.com/aldum/p2pool-alpine-image
+LABEL org.opencontainers.image.description="P2Pool ${P2POOL_BRANCH} Alpine container image"
+LABEL org.opencontainers.image.licenses=MIT
+
 FROM alpine:latest as build
 
 RUN apk add --no-cache \
