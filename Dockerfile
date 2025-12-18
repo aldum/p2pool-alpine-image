@@ -1,9 +1,9 @@
-ARG P2POOL_BRANCH=v4.12
+ARG P2POOL_BRANCH=v4.13
 
 FROM alpine:latest as build
 
 LABEL org.opencontainers.image.source=https://github.com/aldum/p2pool-alpine-image
-LABEL org.opencontainers.image.description="P2Pool v4.12 Alpine container image"
+LABEL org.opencontainers.image.description="P2Pool v4.13 Alpine container image"
 
 RUN apk add --no-cache \
   git build-base cmake \
