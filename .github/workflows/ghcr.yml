@@ -72,6 +72,37 @@ jobs:
           path: arm64.tar
           name: arm64.tar
 
+  build-image-riscv:
+    runs-on: ubuntu-24.04-arm
+    permissions:
+      packages: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Set Variables
+        run: |
+          IMAGE_ID=ghcr.io/${{ github.repository_owner }}/$IMAGE_NAME
+          IMAGE_ID=$(echo $IMAGE_ID | tr '[A-Z]' '[a-z]')
+          VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
+          [[ "${{ github.ref }}" == "refs/tags/"* ]] && VERSION=$(echo $VERSION | sed -e 's/^v//')
+          [ "$VERSION" == "master" ] && VERSION=latest
+          echo "IMAGE_ID=$IMAGE_ID" >> $GITHUB_ENV
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+        env:
+          IMAGE_ID: ${{ env.IMAGE_ID }}
+          VERSION: ${{ env.VERSION }}
+      - name: Build riscv64 image
+        run: docker buildx build . --platform linux/riscv64 --tag $IMAGE_ID:riscv64 --label "runnumber=${GITHUB_RUN_ID}" --cache-to type=gha,mode=max --cache-from type=gha -o type=docker,dest=riscv64.tar
+      - name: Load riscv64 image
+        run: docker load --input riscv64.tar
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          path: riscv64.tar
+          name: riscv64.tar
+
   push-image:
     runs-on: ubuntu-latest
     permissions:
@@ -80,6 +111,7 @@ jobs:
     needs:
       - build-image-x86
       - build-image-arm
+      - build-image-riscv
     steps:
       - uses: actions/checkout@v5
       - name: Set up Docker Buildx
