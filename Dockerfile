@@ -1,9 +1,9 @@
-ARG P2POOL_BRANCH=v4.17.1
+ARG P2POOL_BRANCH=d89974102275f51291575849b15916d669f742ab
 
 FROM alpine:latest as build
 
 LABEL org.opencontainers.image.source=https://github.com/aldum/p2pool-alpine-image
-LABEL org.opencontainers.image.description="P2Pool v4.17.1 Alpine container image"
+LABEL org.opencontainers.image.description="P2Pool d8997410 Alpine container image"
 
 RUN apk add --no-cache \
   git build-base cmake \
@@ -19,8 +19,9 @@ ENV GRPC_PYTHON_BUILD_WITH_SYSTEMD 0
 WORKDIR /p2pool
 
 ARG P2POOL_BRANCH
-RUN git clone --recursive --branch ${P2POOL_BRANCH} \
-  --depth=1 --shallow-submodules https://github.com/SChernykh/p2pool .
+RUN git clone --recursive --depth=25 \
+  --shallow-submodules https://github.com/SChernykh/p2pool . \
+  && git checkout ${P2POOL_BRANCH}
 RUN apk add --no-cache
 
 #ARG NPROC
